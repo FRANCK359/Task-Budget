@@ -1,0 +1,89 @@
+spring:
+  application:
+    name: task-manager
+  
+  # Configuration datasource avec valeurs par défaut
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/taskdb}
+    username: ${SPRING_DATASOURCE_USERNAME:dev}
+    password: ${SPRING_DATASOURCE_PASSWORD:199700}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.postgresql.Driver}
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
+
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: ${SPRING_JPA_SHOW_SQL:false}
+    properties:
+      hibernate:
+        dialect: ${SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT:org.hibernate.dialect.PostgreSQLDialect}
+        format_sql: ${SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL:true}
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+    open-in-view: false
+
+  # Actuator
+  actuator:
+    endpoints:
+      web:
+        exposure:
+          include: health,info,metrics
+    health:
+      db:
+        enabled: true
+      diskspace:
+        enabled: true
+      ping:
+        enabled: true
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: ${SERVER_SERVLET_CONTEXT_PATH:/}
+    session:
+      timeout: 30m
+  tomcat:
+    connection-timeout: 30000
+    max-http-header-size: 16KB
+
+logging:
+  level:
+    com.formation.task: ${LOGGING_LEVEL_COM_FORMATION_TASK:INFO}
+    org.springframework: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK:WARN}
+    org.hibernate: ${LOGGING_LEVEL_ORG_HIBERNATE:WARN}
+    org.postgresql: ${LOGGING_LEVEL_ORG_POSTGRESQL:WARN}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/application.log
+    max-size: 10MB
+    max-history: 7
+
+jwt:
+  secret: ${JWT_SECRET:4F8D7AF23C994C03B7E8D146A7F71F1099E9C7DDA8B5B01357DBF6C78055F002}
+  expiration:
+    hours: ${JWT_EXPIRATION_HOURS:24}
+
+ai:
+  enabled: ${AI_ENABLED:false}
+  huggingface:
+    url: ${AI_HUGGINGFACE_URL:https://api-inference.huggingface.co/models}
+    model: ${AI_HUGGINGFACE_MODEL:gpt2}
+    token: ${AI_HUGGINGFACE_TOKEN:}
+
+# Configuration Spring Boot
+spring.main:
+  allow-bean-definition-overriding: false
+  web-application-type: servlet
+  banner-mode: "off"
+  lazy-initialization: false

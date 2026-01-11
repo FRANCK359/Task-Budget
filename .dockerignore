@@ -1,0 +1,75 @@
+# Java
+*.class
+*.jar
+*.war
+*.ear
+target/
+bin/
+build/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Maven
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# Docker
+docker-compose.override.yml
+.env.PHONY: help build up down logs clean shell
+
+    help:
+    	@echo "Commandes disponibles:"
+    	@echo "  make build    - Construire l'image Docker"
+    	@echo "  make up       - Démarrer les services"
+    	@echo "  make down     - Arrêter les services"
+    	@echo "  make logs     - Voir les logs"
+    	@echo "  make clean    - Nettoyer tout"
+    	@echo "  make shell    - Ouvrir un shell dans le conteneur"
+
+    build:
+    	docker-compose build --no-cache
+
+    up:
+    	docker-compose up -d
+
+    down:
+    	docker-compose down
+
+    logs:
+    	docker-compose logs -f app
+
+    clean:
+    	docker-compose down -v --remove-orphans
+    	docker system prune -f
+
+    shell:
+    	docker-compose exec app sh
+
+    db-shell:
+    	docker-compose exec db psql -U dev -d taskdb
+
+    status:
+    	@echo "Application:"
+    	@curl -s http://localhost:8080/api/public/test || echo "Non disponible"
+    	@echo ""
+    	@echo "Base de données:"
+    	@docker-compose exec db pg_isready -U dev && echo "✓ OK" || echo "✗ Erreur"

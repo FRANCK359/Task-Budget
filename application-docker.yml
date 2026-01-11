@@ -1,0 +1,30 @@
+# Configuration spécifique pour Docker
+spring:
+  datasource:
+    url: jdbc:postgresql://db:5432/taskdb
+    username: dev
+    password: 199700
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.formation.task: DEBUG
+    org.springframework: WARN
+
+# Résolution des conflits de beans AI
+ai:
+  enabled: false
+  service:
+    primary: dummy

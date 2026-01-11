@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  # Database
+  db:
+    image: postgres:15-alpine
+    container_name: task-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: taskdb
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: 199700
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./create-dev-db.sql:/docker-entrypoint-initdb.d/01-create-dev.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/02-init-tables.sql
+    networks:
+      - task-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev -d taskdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Application Spring Boot
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: task-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      # CONFIGURATION DATABASE - FIXE
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/taskdb
+      SPRING_DATASOURCE_USERNAME: dev
+      SPRING_DATASOURCE_PASSWORD: 199700
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+
+      # JPA
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+
+      # JWT
+      JWT_SECRET: 4F8D7AF23C994C03B7E8D146A7F71F1099E9C7DDA8B5B01357DBF6C78055F002
+      JWT_EXPIRATION_HOURS: "24"
+
+      # AI - DÉSACTIVÉ pour éviter conflit de beans
+      AI_ENABLED: "false"
+      AI_HUGGINGFACE_TOKEN:AI_HUGGINGFACE_TOKEN: ${AI_HUGGINGFACE_TOKEN}
+
+      AI_HUGGINGFACE_URL: "https://api-inference.huggingface.co/models"
+      AI_HUGGINGFACE_MODEL: "gpt2"
+
+      # Spring
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_APPLICATION_NAME: task-manager
+
+      # Server
+      SERVER_PORT: "8080"
+      SERVER_SERVLET_CONTEXT_PATH: "/"
+
+      # Logging - VALEURS FIXES (pas de variables)
+      LOGGING_LEVEL_ROOT: "WARN"
+      LOGGING_LEVEL_COM_FORMATION_TASK: "INFO"
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: "WARN"
+      LOGGING_LEVEL_ORG_HIBERNATE: "WARN"
+      LOGGING_LEVEL_ORG_POSTGRESQL: "WARN"
+
+      # Java
+      JAVA_OPTS: "-Xmx512m -Xms256m -Dfile.encoding=UTF-8"
+
+      # Timezone
+      TZ: "Europe/Paris"
+
+    volumes:
+      - ./logs:/app/logs
+      - ./application-docker.yml:/app/config/application.yml:ro
+    networks:
+      - task-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+networks:
+  task-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
